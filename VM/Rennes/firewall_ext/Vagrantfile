@@ -1,4 +1,4 @@
-# External Firewall (Rennes) - Handles external connections for Rennes site
+# External Firewall (Rennes)
 Vagrant.configure("2") do |config|
   config.vm.box = "ubuntu/bionic64"
   config.vm.hostname = "firewall-externe-rennes"

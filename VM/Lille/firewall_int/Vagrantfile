@@ -1,4 +1,4 @@
-# Internal Firewall (Lille) - Protects internal network
+# Internal Firewall (Lille)
 Vagrant.configure("2") do |config|
 	config.vm.box = "ubuntu/bionic64"
 	config.vm.hostname = "firewall-interne-lille"
