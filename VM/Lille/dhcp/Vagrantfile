@@ -1,0 +1,9 @@
+# DHCP Server (Lille)
+Vagrant.configure("2") do |config|
+  config.vm.box = "ubuntu/bionic64"
+  config.vm.hostname = "dhcp-server-lille"
+  config.vm.network "private_network", ip: "192.168.20.2", netmask: "255.255.255.0"  # LAN_DHCP
+  config.vm.network "private_network", ip: "192.168.32.2", netmask: "255.255.240.0"  # LAN_INT
+  
+  config.vm.provision "shell", path: "dhcp_config.sh"
+end
