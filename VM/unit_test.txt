@@ -1,0 +1,3 @@
+To test all VMs: ./vm_unit_test.py --all
+To test a specific VM: ./vm_unit_test.py --vm firewall-externe-lille
+To test inter-VM communication: ./vm_unit_test.py --inter-vm
