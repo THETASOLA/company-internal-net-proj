@@ -16,6 +16,16 @@ def run_command(command, vm_name=None, vm_dir=None):
         os.chdir('../..')  # Return to the original directory
     return process.returncode, output.decode('utf-8'), error.decode('utf-8')
 
+def start_vm(vm_name, vm_dir):
+    if vm_name and vm_dir:
+        os.chdir(vm_dir)
+    else:
+        print("Error: VM name and directory must be provided")
+        return 1, "", "Error: VM name and directory must be provided"
+    process = subprocess.Popen(f"vagrant up  '{vm_name}'", stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+    output, error = process.communicate()
+    return process.returncode, output.decode('utf-8'), error.decode('utf-8')
+
 def test_vm(vm_name, vm_dir):
     print(f"Testing {vm_name}...")
     
@@ -253,10 +263,12 @@ This is a test email from NAS."""
 
 def main():
     parser = argparse.ArgumentParser(description="Run unit tests on Vagrant VMs")
+    parser.add_argument("--on", action="store_true", help="Starts all VMS")
     parser.add_argument("--all", action="store_true", help="Test all VMs")
     parser.add_argument("--vm", type=str, help="Test a specific VM")
     parser.add_argument("--inter-vm", action="store_true", help="Test inter-VM communication")
     args = parser.parse_args()
+    vms = []
 
     if args.all:
         vms = [
@@ -283,6 +295,24 @@ def main():
         vm_type = args.vm.split('-')[0]
         vm_dir = f"{site}/{vm_type}"
         vms = [(args.vm, vm_dir)]
+    elif args.on:
+        #start all VMs
+        arg = [
+            ("firewall-externe-lille", "Lille/firewall_ext"),
+            ("firewall-interne-lille", "Lille/firewall_int"),
+            ("dhcp-server-lille", "Lille/dhcp"),
+            ("dns-server-lille", "Lille/dns"),
+            ("smtp-server-lille", "Lille/smtp"),
+            ("nas-lille", "Lille/nas"),
+            ("vpn-server-lille", "Lille/vpn"),
+            ("firewall-externe-rennes", "Rennes/firewall_ext"),
+            ("dhcp-server-rennes", "Rennes/dhcp")
+        ]
+        for vm_name, vm_dir in arg:
+            returncode, output, error = start_vm(vm_name=vm_name, vm_dir=vm_dir)
+            if returncode != 0:
+                print(f"Error starting {vm_name}: {error}")
+                sys.exit(1)
     elif args.inter_vm:
         return test_inter_vm_communication()
     else:
