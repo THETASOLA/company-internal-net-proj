@@ -1,3 +1,4 @@
-To test all VMs: ./vm_unit_test.py --all
-To test a specific VM: ./vm_unit_test.py --vm firewall-externe-lille
-To test inter-VM communication: ./vm_unit_test.py --inter-vm
+Tester toute les vm: ./vm_unit_test.py --all
+vm spécifique: ./vm_unit_test.py --vm firewall-externe-lille
+inter-vm: ./vm_unit_test.py --inter-vm
+(Il faut que les VM soit déjà lancé)
