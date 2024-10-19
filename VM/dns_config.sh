@@ -66,9 +66,9 @@ cat << EOF > /etc/bind/zones/db.lille.local
 ;
 @       IN      NS      ns1.lille.local.
 ns1     IN      A       192.168.12.2
-firewall-externe   IN      A       192.168.10.1
+firewall-externe   IN      A       192.168.10.254
 vpn     IN      A       192.168.10.2
-firewall-interne   IN      A       192.168.11.1
+firewall-interne   IN      A       192.168.11.254
 dns     IN      A       192.168.12.2
 smtp    IN      A       192.168.13.2
 nas     IN      A       192.168.14.2
@@ -85,11 +85,11 @@ cat << EOF > /etc/bind/zones/db.rennes.local
                          604800 )       ; Negative Cache TTL
 ;
 @       IN      NS      ns1.lille.local.
-firewall-externe   IN      A       192.168.10.1
-dhcp    IN      A       192.168.11.2
+firewall-externe   IN      A       192.168.15.254
+dhcp    IN      A       192.168.21.2
 EOF
 
-# Create reverse zone files (only showing one example, repeat for other subnets)
+# Create reverse zone files
 cat << EOF > /etc/bind/zones/db.192.168.10
 \$TTL    604800
 @       IN      SOA     ns1.lille.local. admin.lille.local. (
@@ -104,7 +104,84 @@ cat << EOF > /etc/bind/zones/db.192.168.10
 2       IN      PTR     vpn.lille.local.
 EOF
 
-# Create similar reverse zone files for other subnets (192.168.11, 192.168.12, etc.)
+cat << EOF > /etc/bind/zones/db.192.168.11
+\$TTL    604800
+@       IN      SOA     ns1.lille.local. admin.lille.local. (
+                              2         ; Serial
+                         604800         ; Refresh
+                          86400         ; Retry
+                        2419200         ; Expire
+                         604800 )       ; Negative Cache TTL
+;
+@       IN      NS      ns1.lille.local.
+1       IN      PTR     firewall-interne.lille.local.
+2       IN      PTR     dhcp-rennes.lille.local.
+EOF
+
+cat << EOF > /etc/bind/zones/db.192.168.12
+\$TTL    604800
+@       IN      SOA     ns1.lille.local. admin.lille.local. (
+                              2         ; Serial
+                         604800         ; Refresh
+                          86400         ; Retry
+                        2419200         ; Expire
+                         604800 )       ; Negative Cache TTL
+;
+@       IN      NS      ns1.lille.local.
+1       IN      PTR     dns.lille.local.
+EOF
+
+cat << EOF > /etc/bind/zones/db.192.168.13
+\$TTL    604800
+@       IN      SOA     ns1.lille.local. admin.lille.local. (
+                              2         ; Serial
+                         604800         ; Refresh
+                          86400         ; Retry
+                        2419200         ; Expire
+                         604800 )       ; Negative Cache TTL
+;
+@       IN      NS      ns1.lille.local.
+2       IN      PTR     smtp.lille.local.
+EOF
+
+cat << EOF > /etc/bind/zones/db.192.168.14
+\$TTL    604800
+@       IN      SOA     ns1.lille.local. admin.lille.local. (
+                              2         ; Serial
+                         604800         ; Refresh
+                          86400         ; Retry
+                        2419200         ; Expire
+                         604800 )       ; Negative Cache TTL
+;
+@       IN      NS      ns1.lille.local.
+2       IN      PTR     nas.lille.local.
+EOF
+
+cat << EOF > /etc/bind/zones/db.192.168.20
+\$TTL    604800
+@       IN      SOA     ns1.lille.local. admin.lille.local. (
+                              2         ; Serial
+                         604800         ; Refresh
+                          86400         ; Retry
+                        2419200         ; Expire
+                         604800 )       ; Negative Cache TTL
+;
+@       IN      NS      ns1.lille.local.
+2       IN      PTR     dhcp.lille.local.
+EOF
+
+cat << EOF > /etc/bind/zones/db.192.168.21
+\$TTL    604800
+@       IN      SOA     ns1.lille.local. admin.lille.local. (
+                              2         ; Serial
+                         604800         ; Refresh
+                          86400         ; Retry
+                        2419200         ; Expire
+                         604800 )       ; Negative Cache TTL
+;
+@       IN      NS      ns1.lille.local.
+2       IN      PTR     dhcp-rennes.lille.local.
+EOF
 
 # Configure BIND9 options
 cat << EOF > /etc/bind/named.conf.options

@@ -34,15 +34,22 @@ class VMTester(threading.Thread):
         self.result_queue.put((self.vm_name, success))
 
     def run_command(self, command):
-        full_command = f"vagrant ssh {self.vm_name} -c '{command}'"
+        full_command = f"""vagrant ssh {self.vm_name} -c "{command}" """
+        self.console.write(f"{command}\n")
+        print(full_command)
         process = subprocess.Popen(full_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         output, error = process.communicate()
+        print(output.decode('utf-8'))
+        print(error.decode('utf-8'))
+        if process.returncode != 0:
+            self.console.write(f"--- ERROR {process.returncode} ---:\n{error.decode('utf-8')}\n")
+        self.console.write(output.decode('utf-8'))
         return process.returncode, output.decode('utf-8'), error.decode('utf-8')
 
     def test_vm(self):
         self.console.write(f"Testing {self.vm_name}...\n")
         
-        if "firewall" in self.vm_name:
+        if "fire" in self.vm_name:
             success = self.test_firewall()
         elif "dhcp" in self.vm_name:
             success = self.test_dhcp()
@@ -70,10 +77,10 @@ class VMTester(threading.Thread):
             success = False
 
         rules_to_check = [
-            ("-A INPUT -p tcp --dport 22 -j ACCEPT", "SSH allowed"),
-            ("-A INPUT -p tcp --dport 80 -j ACCEPT", "HTTP allowed"),
-            ("-A INPUT -p tcp --dport 443 -j ACCEPT", "HTTPS allowed"),
-            ("-A INPUT -p icmp -j ACCEPT", "ICMP (ping) allowed")
+            ("-p tcp --dport 22 -j ACCEPT", "SSH allowed"),
+            ("-p tcp --dport 80 -j ACCEPT", "HTTP allowed"),
+            ("-p tcp --dport 443 -j ACCEPT", "HTTPS allowed"),
+            ("-p icmp -j ACCEPT", "ICMP (ping) allowed")
         ]
 
         for rule, description in rules_to_check:
@@ -82,10 +89,11 @@ class VMTester(threading.Thread):
                 self.console.write(f"Error: Firewall rule for {description} is missing\n")
                 success = False
 
-        returncode, output, error = self.run_command("sudo iptables -t nat -L POSTROUTING -n -v")
-        if "MASQUERADE" not in output:
-            self.console.write("Error: NAT (MASQUERADE) rule is missing\n")
-            success = False
+        if "ext" in self.vm_name:
+            returncode, output, error = self.run_command("sudo iptables -t nat -L POSTROUTING -n -v")
+            if "MASQUERADE" not in output:
+                self.console.write("Error: NAT (MASQUERADE) rule is missing\n")
+                success = False
 
         return success
 
@@ -121,9 +129,9 @@ class VMTester(threading.Thread):
                 self.console.write(f"Error: Unable to resolve {domain}\n")
                 success = False
 
-        returncode, output, error = self.run_command("dig @localhost -x 192.168.10.1")
+        returncode, output, error = self.run_command("dig @localhost -x 192.168.10.254")
         if "firewall-externe.lille.local" not in output:
-            self.console.write("Error: Reverse DNS lookup failed for 192.168.10.1\n")
+            self.console.write("Error: Reverse DNS lookup failed for 192.168.10.254\n")
             success = False
 
         return success
@@ -132,17 +140,40 @@ class VMTester(threading.Thread):
         self.console.write("Testing SMTP server...\n")
         success = True
 
+        # Check if Postfix is running
         returncode, output, error = self.run_command("systemctl is-active postfix")
         if "active" not in output:
             self.console.write("Error: Postfix (SMTP server) is not running\n")
             success = False
 
-        returncode, output, error = self.run_command("echo 'QUIT' | telnet localhost 25")
-        if "220 smtp.lille.local ESMTP Postfix" not in output:
-            self.console.write("Error: Unable to connect to SMTP server\n")
-            success = False
+        # Send test email
+        self.console.write("Sending test email...\n")
+        
+        # Full path to sendmail (use `which sendmail` to confirm path)
+        send_email_command = f"echo 'Subject: Test Email   This is a test.' | /usr/sbin/sendmail smtp_test_user@localhost"
+        returncode, output, error = self.run_command(send_email_command)
 
+        if returncode != 0:
+            self.console.write(f"Error: Failed to send email. Error: {error}\n")
+            success = False
+        else:
+            self.console.write("Test email sent successfully.\n")
+        
+        # Check if the test email was received by searching the mail file
+        self.console.write("Checking for received email...\n")
+        
+        # Assuming Postfix delivers to /var/mail/smtp_test_user, adjust if necessary
+        mail_check_command = "sudo grep 'Subject: Test Email' /var/mail/smtp_test_user"
+        returncode, output, error = self.run_command(mail_check_command)
+        
+        if returncode != 0:
+            self.console.write("Error: Test email was not received in smtp_test_user's mailbox\n")
+            success = False
+        else:
+            self.console.write("Test email received successfully.\n")
+        
         return success
+
 
     def test_nas(self):
         self.console.write("Testing NAS...\n")

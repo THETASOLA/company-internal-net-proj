@@ -2,9 +2,12 @@
 
 # Install Postfix
 DEBIAN_FRONTEND=noninteractive apt-get update
-DEBIAN_FRONTEND=noninteractive apt-get install -y postfix
+DEBIAN_FRONTEND=noninteractive apt-get install -y postfix mailutils
 
-# Configure
+# Create a test user
+useradd -m smtp_test_user
+
+# Configure Postfix
 cat << EOF > /etc/postfix/main.cf
 # See /usr/share/postfix/main.cf.dist for a commented, more complete version
 
@@ -17,7 +20,7 @@ readme_directory = no
 myhostname = smtp.lille.local
 mydomain = lille.local
 myorigin = \$mydomain
-mydestination = \$myhostname, localhost.\$mydomain, localhost, \$mydomain
+mydestination = \$myhostname, localhost.\$mydomain, localhost, \$mydomain, smtp_test_user
 relayhost =
 mynetworks = 127.0.0.0/8, 192.168.0.0/16
 mailbox_size_limit = 0
@@ -33,5 +36,9 @@ smtpd_tls_session_cache_database = btree:\${data_directory}/smtpd_scache
 smtp_tls_session_cache_database = btree:\${data_directory}/smtp_scache
 EOF
 
-# Restart
+# Restart Postfix
 systemctl restart postfix
+
+# Ensure mail directory exists for the test user
+mkdir -p /home/smtp_test_user/Maildir
+chown -R smtp_test_user:smtp_test_user /home/smtp_test_user/Maildir

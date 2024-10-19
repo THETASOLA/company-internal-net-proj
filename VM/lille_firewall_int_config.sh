@@ -1,6 +1,8 @@
 #!/bin/bash
 
-# Flush existing rules
+# Lille Internal Firewall Configuration
+
+# Clear all existing rules and chains
 iptables -F
 iptables -X
 iptables -t nat -F
@@ -8,40 +10,43 @@ iptables -t nat -X
 iptables -t mangle -F
 iptables -t mangle -X
 
-# Set default policies
+# Set default policies: drop all incoming and forwarded traffic, allow all outgoing traffic
 iptables -P INPUT DROP
 iptables -P FORWARD DROP
 iptables -P OUTPUT ACCEPT
 
-# Allow loopback
+# Allow all traffic on the loopback interface
 iptables -A INPUT -i lo -j ACCEPT
 iptables -A OUTPUT -o lo -j ACCEPT
 
-# Allow established and related connections
+# Allow return traffic for established connections
 iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
 
-# Allow SSH (adjust if your SSH port is different)
+# Allow incoming SSH connections (port 22)
 iptables -A INPUT -p tcp --dport 22 -j ACCEPT
 
-# Allow DNS
+# Allow incoming DNS queries (UDP port 53 and TCP port 53)
 iptables -A INPUT -p udp --dport 53 -j ACCEPT
 iptables -A INPUT -p tcp --dport 53 -j ACCEPT
 
-# Allow DHCP
+# Allow DHCP traffic
 iptables -A INPUT -p udp --dport 67:68 --sport 67:68 -j ACCEPT
 
-# Allow SMTP
+# Allow incoming SMTP traffic (port 25)
 iptables -A INPUT -p tcp --dport 25 -j ACCEPT
 
-# Allow Samba (for NAS)
+# Allow Samba traffic for NAS
 iptables -A INPUT -p tcp --dport 139 -j ACCEPT
 iptables -A INPUT -p tcp --dport 445 -j ACCEPT
 iptables -A INPUT -p udp --dport 137:138 -j ACCEPT
 
-# Allow ICMP (ping)
+# Allow incoming ICMP (ping) traffic
 iptables -A INPUT -p icmp -j ACCEPT
 
 # Allow forwarding between internal networks
+# Assuming:
+# eth1, eth2, eth3 are for various internal networks
+# eth6 is for the new LAN_INT network
 iptables -A FORWARD -i eth1 -o eth2 -j ACCEPT
 iptables -A FORWARD -i eth2 -o eth1 -j ACCEPT
 iptables -A FORWARD -i eth1 -o eth3 -j ACCEPT
@@ -53,6 +58,3 @@ iptables -A FORWARD -o eth6 -j ACCEPT
 
 # Allow forwarding for established connections
 iptables -A FORWARD -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
-
-# Save rules
-iptables-save > /etc/iptables/rules.v4
