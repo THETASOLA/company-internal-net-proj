@@ -1,4 +1,2 @@
-Tester toute les vm: ./vm_unit_test.py --all
-vm spécifique: ./vm_unit_test.py --vm firewall-externe-lille
-inter-vm: ./vm_unit_test.py --inter-vm
+./vm-unit-test-gui.py --vms firewall-externe-lille dhcp-server-lille vpn-server-lille
 (Il faut que les VM soit déjà lancé)

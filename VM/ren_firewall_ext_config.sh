@@ -45,7 +45,3 @@ iptables -A FORWARD -i eth1 -o eth0 -j ACCEPT
 
 # Save rules
 iptables-save > /etc/iptables/rules.v4
-
-# Install iptables-persistent to load rules on boot
-apt-get update
-apt-get install -y iptables-persistent

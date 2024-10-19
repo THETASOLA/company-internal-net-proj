@@ -1,8 +1,0 @@
-# NAS (Lille)
-Vagrant.configure("2") do |config|
-  config.vm.box = "ubuntu/bionic64"
-  config.vm.hostname = "nas-lille"
-  config.vm.network "private_network", ip: "192.168.14.2", netmask: "255.255.255.0"  # LAN_NAS
-  
-  config.vm.provision "shell", path: "nas_config.sh"
-end

@@ -7,7 +7,7 @@ Vagrant.configure("2") do |config|
       dhcp_lille.vm.hostname = "dhcp-server-lille"
       dhcp_lille.vm.network "private_network", ip: "192.168.20.2", netmask: "255.255.255.0"  # LAN_DHCP
       dhcp_lille.vm.network "private_network", ip: "192.168.32.2", netmask: "255.255.240.0"  # LAN_INT
-      dhcp_lille.vm.provision "shell", path: "lille_dhcp_config.sh"
+      dhcp_lille.vm.provision "shell", path: "lille_dhcp_config.sh", run: "always"
     end
   
     # DNS Server (Lille)
@@ -15,7 +15,7 @@ Vagrant.configure("2") do |config|
       dns_lille.vm.box = "ubuntu/bionic64"
       dns_lille.vm.hostname = "dns-server-lille"
       dns_lille.vm.network "private_network", ip: "192.168.12.2", netmask: "255.255.255.0"  # LAN_DNS
-      dns_lille.vm.provision "shell", path: "dns_config.sh"
+      dns_lille.vm.provision "shell", path: "dns_config.sh", run: "always"
     end
   
     # External Firewall (Lille)
@@ -23,21 +23,21 @@ Vagrant.configure("2") do |config|
       fw_externe_lille.vm.box = "ubuntu/bionic64"
       fw_externe_lille.vm.hostname = "firewall-externe-lille"
       fw_externe_lille.vm.network "public_network"  # WAN interface
-      fw_externe_lille.vm.network "private_network", ip: "192.168.10.1", netmask: "255.255.255.0"  # LAN_DMZ_1
-      fw_externe_lille.vm.provision "shell", path: "lille_firewall_ext_config.sh"
+      fw_externe_lille.vm.network "private_network", ip: "192.168.10.254", netmask: "255.255.255.0"  # LAN_DMZ_1
+      fw_externe_lille.vm.provision "shell", path: "lille_firewall_ext_config.sh", run: "always"
     end
   
     # Internal Firewall (Lille)
     config.vm.define "firewall-interne-lille" do |fw_interne_lille|
       fw_interne_lille.vm.box = "ubuntu/bionic64"
       fw_interne_lille.vm.hostname = "firewall-interne-lille"
-      fw_interne_lille.vm.network "private_network", ip: "192.168.11.1", netmask: "255.255.255.0"  # LAN_DMZ_2
-      fw_interne_lille.vm.network "private_network", ip: "192.168.12.1", netmask: "255.255.255.0"  # LAN_DNS
-      fw_interne_lille.vm.network "private_network", ip: "192.168.13.1", netmask: "255.255.255.0"  # LAN_SMTP
-      fw_interne_lille.vm.network "private_network", ip: "192.168.14.1", netmask: "255.255.255.0"  # LAN_NAS
-      fw_interne_lille.vm.network "private_network", ip: "192.168.20.1", netmask: "255.255.255.0"  # LAN_DHCP
-      fw_interne_lille.vm.network "private_network", ip: "192.168.32.1", netmask: "255.255.240.0"  # LAN_INT
-      fw_interne_lille.vm.provision "shell", path: "lille_firewall_int_config.sh"
+      fw_interne_lille.vm.network "private_network", ip: "192.168.11.254", netmask: "255.255.255.0"  # LAN_DMZ_2
+      fw_interne_lille.vm.network "private_network", ip: "192.168.12.254", netmask: "255.255.255.0"  # LAN_DNS
+      fw_interne_lille.vm.network "private_network", ip: "192.168.13.254", netmask: "255.255.255.0"  # LAN_SMTP
+      fw_interne_lille.vm.network "private_network", ip: "192.168.14.254", netmask: "255.255.255.0"  # LAN_NAS
+      fw_interne_lille.vm.network "private_network", ip: "192.168.20.254", netmask: "255.255.255.0"  # LAN_DHCP
+      fw_interne_lille.vm.network "private_network", ip: "192.168.32.254", netmask: "255.255.240.0"  # LAN_INT
+      fw_interne_lille.vm.provision "shell", path: "lille_firewall_int_config.sh", run: "always"
     end
   
     # NAS (Lille)
@@ -45,7 +45,7 @@ Vagrant.configure("2") do |config|
       nas_lille.vm.box = "ubuntu/bionic64"
       nas_lille.vm.hostname = "nas-lille"
       nas_lille.vm.network "private_network", ip: "192.168.14.2", netmask: "255.255.255.0"  # LAN_NAS
-      nas_lille.vm.provision "shell", path: "nas_config.sh"
+      nas_lille.vm.provision "shell", path: "nas_config.sh", run: "always"
     end
   
     # SMTP Server (Lille)
@@ -53,7 +53,7 @@ Vagrant.configure("2") do |config|
       smtp_lille.vm.box = "ubuntu/bionic64"
       smtp_lille.vm.hostname = "smtp-server-lille"
       smtp_lille.vm.network "private_network", ip: "192.168.13.2", netmask: "255.255.255.0"  # LAN_SMTP
-      smtp_lille.vm.provision "shell", path: "smtp_config.sh"
+      smtp_lille.vm.provision "shell", path: "smtp_config.sh", run: "always"
     end
   
     # VPN Server (Lille)
@@ -62,7 +62,7 @@ Vagrant.configure("2") do |config|
       vpn_lille.vm.hostname = "vpn-server-lille"
       vpn_lille.vm.network "private_network", ip: "192.168.10.2", netmask: "255.255.255.0"  # LAN_DMZ_1
       vpn_lille.vm.network "private_network", ip: "192.168.11.2", netmask: "255.255.255.0"  # LAN_DMZ_2
-      vpn_lille.vm.provision "shell", path: "vpn_config.sh"
+      vpn_lille.vm.provision "shell", path: "vpn_config.sh", run: "always"
     end
   
     # DHCP Server (Rennes)
@@ -71,7 +71,7 @@ Vagrant.configure("2") do |config|
       dhcp_rennes.vm.hostname = "dhcp-server-rennes"
       dhcp_rennes.vm.network "private_network", ip: "192.168.11.2", netmask: "255.255.255.0"  # LAN_DHCP
       dhcp_rennes.vm.network "private_network", ip: "192.168.32.3", netmask: "255.255.240.0"  # LAN_INT
-      dhcp_rennes.vm.provision "shell", path: "ren_dhcp_config.sh"
+      dhcp_rennes.vm.provision "shell", path: "ren_dhcp_config.sh", run: "always"
     end
   
     # External Firewall (Rennes)
@@ -79,8 +79,8 @@ Vagrant.configure("2") do |config|
       fw_externe_rennes.vm.box = "ubuntu/bionic64"
       fw_externe_rennes.vm.hostname = "firewall-externe-rennes"
       fw_externe_rennes.vm.network "public_network"  # WAN interface
-      fw_externe_rennes.vm.network "private_network", ip: "192.168.10.1", netmask: "255.255.255.0"  # LAN_DMZ
-      fw_externe_rennes.vm.provision "shell", path: "ren_firewall_ext_config.sh"
+      fw_externe_rennes.vm.network "private_network", ip: "192.168.10.254", netmask: "255.255.255.0"  # LAN_DMZ
+      fw_externe_rennes.vm.provision "shell", path: "ren_firewall_ext_config.sh", run: "always"
     end
   
 end

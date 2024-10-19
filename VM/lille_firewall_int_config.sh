@@ -23,32 +23,34 @@ iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
 # Allow SSH (adjust if your SSH port is different)
 iptables -A INPUT -p tcp --dport 22 -j ACCEPT
 
-# Allow VPN (OpenVPN)
-iptables -A INPUT -p udp --dport 1194 -j ACCEPT
-
 # Allow DNS
 iptables -A INPUT -p udp --dport 53 -j ACCEPT
 iptables -A INPUT -p tcp --dport 53 -j ACCEPT
 
-# Allow HTTP and HTTPS
-iptables -A INPUT -p tcp --dport 80 -j ACCEPT
-iptables -A INPUT -p tcp --dport 443 -j ACCEPT
+# Allow DHCP
+iptables -A INPUT -p udp --dport 67:68 --sport 67:68 -j ACCEPT
+
+# Allow SMTP
+iptables -A INPUT -p tcp --dport 25 -j ACCEPT
+
+# Allow Samba (for NAS)
+iptables -A INPUT -p tcp --dport 139 -j ACCEPT
+iptables -A INPUT -p tcp --dport 445 -j ACCEPT
+iptables -A INPUT -p udp --dport 137:138 -j ACCEPT
 
 # Allow ICMP (ping)
 iptables -A INPUT -p icmp -j ACCEPT
 
-# NAT (assuming eth0 is WAN and eth1 is LAN)
-iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
-
-# Forward VPN traffic to VPN server
-iptables -A FORWARD -i eth0 -o eth1 -p udp --dport 1194 -d 192.168.10.2 -j ACCEPT
+# Allow forwarding between internal networks
+iptables -A FORWARD -i eth1 -o eth2 -j ACCEPT
+iptables -A FORWARD -i eth2 -o eth1 -j ACCEPT
+iptables -A FORWARD -i eth1 -o eth3 -j ACCEPT
+iptables -A FORWARD -i eth3 -o eth1 -j ACCEPT
+iptables -A FORWARD -i eth2 -o eth3 -j ACCEPT
+iptables -A FORWARD -i eth3 -o eth2 -j ACCEPT
 
 # Allow forwarding for established connections
 iptables -A FORWARD -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
 
 # Save rules
 iptables-save > /etc/iptables/rules.v4
-
-# Install iptables-persistent to load rules on boot
-apt-get update
-apt-get install -y iptables-persistent

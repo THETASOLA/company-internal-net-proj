@@ -23,4 +23,4 @@ EOF
 sed -i 's/INTERFACESv4=""/INTERFACESv4="eth1"/' /etc/default/isc-dhcp-server
 
 # Restart
-systemctl restart isc-dhcp-server
+sudo systemctl restart isc-dhcp-server
