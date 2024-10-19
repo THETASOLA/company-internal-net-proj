@@ -34,14 +34,24 @@ iptables -A INPUT -p tcp --dport 443 -j ACCEPT
 # Allow ICMP (ping)
 iptables -A INPUT -p icmp -j ACCEPT
 
-# NAT (assuming eth0 is WAN and eth1 is LAN)
+# NAT (assuming eth0 is WAN, eth1 is LAN_DMZ, eth2 is LAN_DHCP, and eth3 is LAN_INT)
 iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
 
 # Allow forwarding for established connections
 iptables -A FORWARD -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
 
-# Allow internal network to access internet
+# Allow internal networks to access internet
 iptables -A FORWARD -i eth1 -o eth0 -j ACCEPT
+iptables -A FORWARD -i eth2 -o eth0 -j ACCEPT
+iptables -A FORWARD -i eth3 -o eth0 -j ACCEPT
+
+# Allow communication between internal networks
+iptables -A FORWARD -i eth1 -o eth2 -j ACCEPT
+iptables -A FORWARD -i eth2 -o eth1 -j ACCEPT
+iptables -A FORWARD -i eth1 -o eth3 -j ACCEPT
+iptables -A FORWARD -i eth3 -o eth1 -j ACCEPT
+iptables -A FORWARD -i eth2 -o eth3 -j ACCEPT
+iptables -A FORWARD -i eth3 -o eth2 -j ACCEPT
 
 # Save rules
 iptables-save > /etc/iptables/rules.v4

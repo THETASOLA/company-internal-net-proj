@@ -227,15 +227,15 @@ class Application(tk.Tk):
 def main():
     parser = argparse.ArgumentParser(description="Run unit tests on Vagrant VMs with GUI")
     parser.add_argument("--vms", nargs="+", default=[
-        "firewall-externe-lille",
-        "firewall-interne-lille",
-        "dhcp-server-lille",
-        "dns-server-lille",
-        "smtp-server-lille",
+        "fire-ext-lille",
+        "fire-int-lille",
+        "dhcp-lille",
+        "dns-lille",
+        "smtp-lille",
         "nas-lille",
-        "vpn-server-lille",
-        "firewall-externe-rennes",
-        "dhcp-server-rennes"
+        "vpn-lille",
+        "fire-ext-rennes",
+        "dhcp-rennes"
     ], help="List of VMs to test")
     args = parser.parse_args()
 

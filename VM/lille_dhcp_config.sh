@@ -9,18 +9,22 @@ default-lease-time 600;
 max-lease-time 7200;
 
 subnet 192.168.20.0 netmask 255.255.255.0 {
+  range 192.168.20.100 192.168.20.250;
+  option routers 192.168.20.254;
+  option domain-name-servers 192.168.12.2;
+  option domain-name "lille.local";
 }
 
-subnet 192.168.32.0 netmask 255.255.240.0 {
-  range 192.168.32.100 192.168.47.254;
-  option routers 192.168.32.1;
+subnet 192.168.50.0 netmask 255.255.255.0 {
+  range 192.168.50.100 192.168.50.250;
+  option routers 192.168.50.254;
   option domain-name-servers 192.168.12.2;
   option domain-name "lille.local";
 }
 
 EOF
 
-sed -i 's/INTERFACESv4=""/INTERFACESv4="eth1"/' /etc/default/isc-dhcp-server
+sed -i 's/INTERFACESv4=""/INTERFACESv4="eth1 eth2"/' /etc/default/isc-dhcp-server
 
 # Restart
-sudo systemctl restart isc-dhcp-server
+systemctl restart isc-dhcp-server
