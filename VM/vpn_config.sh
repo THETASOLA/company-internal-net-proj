@@ -9,21 +9,21 @@ mkdir -p /etc/openvpn/keys
 cd /etc/openvpn/keys
 
 # Set up the Certificate Authority (CA)
-openssl genrsa -out ca.key 2048
+openssl genrsa -out ca.key 1024
 openssl req -new -x509 -days 365 -key ca.key -out ca.crt -subj "/CN=MyVPN CA"
 
 # Generate server key and certificate
-openssl genrsa -out server.key 2048
+openssl genrsa -out server.key 1024
 openssl req -new -key server.key -out server.csr -subj "/CN=MyVPN Server"
 openssl x509 -req -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out server.crt -days 365
 
 # Generate client key and certificate
-openssl genrsa -out client.key 2048
+openssl genrsa -out client.key 1024
 openssl req -new -key client.key -out client.csr -subj "/CN=MyVPN Client"
 openssl x509 -req -in client.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out client.crt -days 365
 
 # Generate Diffie-Hellman parameters
-openssl dhparam -out dh.pem 2048
+openssl dhparam -out dh.pem 1024
 
 # Generate a static key for TLS authentication
 openvpn --genkey --secret ta.key
