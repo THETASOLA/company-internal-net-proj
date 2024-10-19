@@ -1,41 +1,47 @@
 #!/bin/bash
 
-# Install OpenVPN
+# Install OpenVPN and OpenSSL
 apt-get update
-apt-get install -y openvpn easy-rsa
+apt-get install -y openvpn openssl
 
-# Set up the PKI
-make-cadir /etc/openvpn/easy-rsa
-cd /etc/openvpn/easy-rsa
+# Create the directory for the certificates
+mkdir -p /etc/openvpn/keys
+cd /etc/openvpn/keys
 
-# Initialize the PKI
-./easyrsa init-pki
-./easyrsa build-ca nopass
-./easyrsa gen-dh
-openvpn --genkey --secret /etc/openvpn/ta.key
+# Set up the Certificate Authority (CA)
+openssl genrsa -out ca.key 1024
+openssl req -new -x509 -days 365 -key ca.key -out ca.crt -subj "/CN=MyVPN CA"
 
-# Generate server certificate
-./easyrsa gen-req server nopass
-./easyrsa sign-req server server
+# Generate server key and certificate
+openssl genrsa -out server.key 1024
+openssl req -new -key server.key -out server.csr -subj "/CN=MyVPN Server"
+openssl x509 -req -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out server.crt -days 365
 
-# Generate client certificate
-./easyrsa gen-req client nopass
-./easyrsa sign-req client client
+# Generate client key and certificate
+openssl genrsa -out client.key 1024
+openssl req -new -key client.key -out client.csr -subj "/CN=MyVPN Client"
+openssl x509 -req -in client.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out client.crt -days 365
 
-# Configure OpenVPN server
+# Generate Diffie-Hellman parameters
+openssl dhparam -out dh.pem 1024
+
+# Generate a static key for TLS authentication
+openvpn --genkey --secret ta.key
+
+# Configure OpenVPN
 cat << EOF > /etc/openvpn/server.conf
 port 1194
 proto udp
 dev tun
-ca /etc/openvpn/easy-rsa/pki/ca.crt
-cert /etc/openvpn/easy-rsa/pki/issued/server.crt
-key /etc/openvpn/easy-rsa/pki/private/server.key
-dh /etc/openvpn/easy-rsa/pki/dh.pem
+ca /etc/openvpn/keys/ca.crt
+cert /etc/openvpn/keys/server.crt
+key /etc/openvpn/keys/server.key
+dh /etc/openvpn/keys/dh.pem
 server 10.8.0.0 255.255.255.0
 ifconfig-pool-persist ipp.txt
 push "route 192.168.0.0 255.255.0.0"
 keepalive 10 120
-tls-auth /etc/openvpn/ta.key 0
+tls-auth /etc/openvpn/keys/ta.key 0
 cipher AES-256-CBC
 compress lz4-v2
 push "compress lz4-v2"
@@ -54,10 +60,36 @@ echo "net.ipv4.ip_forward=1" >> /etc/sysctl.conf
 
 # Configure NAT
 iptables -t nat -A POSTROUTING -s 10.8.0.0/24 -o eth0 -j MASQUERADE
-echo "iptables-persistent iptables-persistent/autosave_v4 boolean true" | debconf-set-selections
-echo "iptables-persistent iptables-persistent/autosave_v6 boolean true" | debconf-set-selections
-apt-get install -y iptables-persistent
 
 # Start OpenVPN service
 systemctl start openvpn@server
 systemctl enable openvpn@server
+
+# Create OpenVPN Client Configuration
+cat << EOF > /etc/openvpn/client.ovpn
+client
+dev tun
+proto udp
+remote 127.0.0.1 1194 # Connect to the local VPN server
+resolv-retry infinite
+nobind
+persist-key
+persist-tun
+auth SHA256
+cipher AES-256-CBC
+key-direction 1
+tls-auth ta.key 1
+
+<ca>
+$(cat ca.crt)
+</ca>
+<cert>
+$(cat client.crt)
+</cert>
+<key>
+$(cat client.key)
+</key>
+EOF
+
+# Ensure the generated client.ovpn file has the correct permissions
+chmod 600 /etc/openvpn/client.ovpn
