@@ -4,6 +4,7 @@ import threading
 import subprocess
 import queue
 import argparse
+import time
 
 class VMConsole(ttk.Frame):
     def __init__(self, master, vm_name):
