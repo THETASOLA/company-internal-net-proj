@@ -27,6 +27,8 @@ iptables -A INPUT -p tcp --dport 53 -j ACCEPT
 iptables -A INPUT -p udp --dport 67:68 --sport 67:68 -j ACCEPT
 
 iptables -A INPUT -p tcp --dport 25 -j ACCEPT
+iptables -A INPUT -p tcp --dport 80 -j ACCEPT
+iptables -A INPUT -p tcp --dport 443 -j ACCEPT
 
 # Samba traffic
 iptables -A INPUT -p tcp --dport 139 -j ACCEPT

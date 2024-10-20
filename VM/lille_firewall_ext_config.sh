@@ -35,7 +35,7 @@ iptables -A INPUT -p icmp -j ACCEPT
 iptables -t nat -A POSTROUTING -o enp0s8 -j MASQUERADE
 
 # Forward VPN traffic
-iptables -A FORWARD -i eth0 -o enp0s9 -p udp --dport 1194 -d 192.168.10.2 -j ACCEPT
+iptables -A FORWARD -i enp0s8 -o enp0s9 -p udp --dport 1194 -d 192.168.10.2 -j ACCEPT
 
 # Allow forwarding for established connections
 iptables -A FORWARD -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
