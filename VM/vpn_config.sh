@@ -8,24 +8,21 @@ apt-get install -y openvpn openssl
 mkdir -p /etc/openvpn/keys
 cd /etc/openvpn/keys
 
-# Set up the Certificate Authority (CA)
+# Set up the Certificate Authority
 openssl genrsa -out ca.key 1024
 openssl req -new -x509 -days 365 -key ca.key -out ca.crt -subj "/CN=MyVPN CA"
 
-# Generate server key and certificate
+# Generate certificate
 openssl genrsa -out server.key 1024
 openssl req -new -key server.key -out server.csr -subj "/CN=MyVPN Server"
 openssl x509 -req -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out server.crt -days 365
 
-# Generate client key and certificate
 openssl genrsa -out client.key 1024
 openssl req -new -key client.key -out client.csr -subj "/CN=MyVPN Client"
 openssl x509 -req -in client.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out client.crt -days 365
 
-# Generate Diffie-Hellman parameters
 openssl dhparam -out dh.pem 1024
 
-# Generate a static key for TLS authentication
 openvpn --genkey --secret ta.key
 
 # Configure OpenVPN
@@ -59,13 +56,13 @@ echo 1 > /proc/sys/net/ipv4/ip_forward
 echo "net.ipv4.ip_forward=1" >> /etc/sysctl.conf
 
 # Configure NAT
-iptables -t nat -A POSTROUTING -s 10.8.0.0/24 -o eth0 -j MASQUERADE
+iptables -t nat -A POSTROUTING -s 10.8.0.0/24 -o enp0s8 -j MASQUERADE
 
 # Start OpenVPN service
 systemctl start openvpn@server
 systemctl enable openvpn@server
 
-# Create OpenVPN Client Configuration
+# Create OpenVPN Client Configuration (we use this for testing, the file would need to be shared with the client)
 cat << EOF > /etc/openvpn/client.ovpn
 client
 dev tun
@@ -91,5 +88,4 @@ $(cat client.key)
 </key>
 EOF
 
-# Ensure the generated client.ovpn file has the correct permissions
 chmod 600 /etc/openvpn/client.ovpn

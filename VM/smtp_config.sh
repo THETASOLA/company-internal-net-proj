@@ -7,7 +7,6 @@ DEBIAN_FRONTEND=noninteractive apt-get install -y postfix mailutils
 # Create a test user
 useradd -m smtp_test_user
 
-# Configure Postfix
 cat << EOF > /etc/postfix/main.cf
 # See /usr/share/postfix/main.cf.dist for a commented, more complete version
 
@@ -36,7 +35,6 @@ smtpd_tls_session_cache_database = btree:\${data_directory}/smtpd_scache
 smtp_tls_session_cache_database = btree:\${data_directory}/smtp_scache
 EOF
 
-# Restart Postfix
 systemctl restart postfix
 
 # Ensure mail directory exists for the test user

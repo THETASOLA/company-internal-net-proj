@@ -4,10 +4,8 @@
 apt-get update
 apt-get install -y samba
 
-# Create a shared directory
 mkdir -p /srv/samba/share
 
-# Set permissions
 chmod -R 0755 /srv/samba/share
 chown -R nobody:nogroup /srv/samba/share
 

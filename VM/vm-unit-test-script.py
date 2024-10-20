@@ -4,16 +4,18 @@ import threading
 import subprocess
 import queue
 import argparse
-import time
+import math
 
 class VMConsole(ttk.Frame):
-    def __init__(self, master, vm_name):
+    def __init__(self, master, vm_name, width=80, height=10):
         super().__init__(master)
         self.vm_name = vm_name
+        self.width = width
+        self.height = height
         self.create_widgets()
 
     def create_widgets(self):
-        self.console = scrolledtext.ScrolledText(self, wrap=tk.WORD, width=80, height=10)
+        self.console = scrolledtext.ScrolledText(self, wrap=tk.WORD, width=self.width, height=self.height)
         self.console.pack(expand=True, fill='both')
         self.console.config(state='disabled')
 
@@ -108,9 +110,22 @@ class VMTester(threading.Thread):
             success = False
 
         returncode, output, error = self.run_command("cat /etc/dhcp/dhcpd.conf")
-        if "subnet 192.168.32.0 netmask 255.255.240.0" not in output:
-            self.console.write("Error: DHCP configuration for subnet 192.168.32.0/20 is missing\n")
+        if self.vm_name == "dhcp-lille":
+            if "subnet 192.168.50.0 netmask 255.255.255.0" not in output:
+                self.console.write("Error: DHCP configuration for subnet 192.168.32.0/24 is missing\n")
+                success = False
+        else:
+            if "subnet 192.168.51.0 netmask 255.255.255.0" not in output:
+                self.console.write("Error: DHCP configuration for subnet 192.168.51.0/24 is missing\n")
+                success = False
+
+        self.console.write("Testing DHCP IP request...\n")
+        returncode, output, error = self.run_command("sudo dhclient -v enp0s3")
+        if returncode != 0 or "bound to" not in output:
+            self.console.write("Error: Failed to obtain IP address from DHCP server\n")
             success = False
+        else:
+            self.console.write("Successfully obtained IP address from DHCP server\n")
 
         return success
 
@@ -123,16 +138,19 @@ class VMTester(threading.Thread):
             self.console.write("Error: BIND (DNS server) is not running\n")
             success = False
 
-        domains_to_check = ["lille.local", "rennes.local"]
-        for domain in domains_to_check:
-            returncode, output, error = self.run_command(f"dig @localhost {domain}")
-            if "ANSWER SECTION" not in output:
-                self.console.write(f"Error: Unable to resolve {domain}\n")
-                success = False
+        returncode, output, error = self.run_command(f"dig @localhost")
+        if "ANSWER SECTION" not in output:
+            self.console.write(f"Error: Unable to resolve localhost\n")
+            success = False
 
-        returncode, output, error = self.run_command("dig @localhost -x 192.168.10.254")
-        if "firewall-externe.lille.local" not in output:
-            self.console.write("Error: Reverse DNS lookup failed for 192.168.10.254\n")
+        returncode, output, error = self.run_command("dig @localhost firewall-externe.lille.local")
+        if "192.168.10.254" not in output:
+            self.console.write("Error: Reverse DNS lookup failed for firewall-externe.lille.local\n")
+            success = False
+
+        returncode, output, error = self.run_command("dig @localhost smtp.lille.local")
+        if "192.168.13.2" not in output:
+            self.console.write("Error: Reverse DNS lookup failed for smtp.lille.local\n")
             success = False
 
         return success
@@ -141,16 +159,13 @@ class VMTester(threading.Thread):
         self.console.write("Testing SMTP server...\n")
         success = True
 
-        # Check if Postfix is running
         returncode, output, error = self.run_command("systemctl is-active postfix")
         if "active" not in output:
             self.console.write("Error: Postfix (SMTP server) is not running\n")
             success = False
-
-        # Send test email
+        
         self.console.write("Sending test email...\n")
         
-        # Full path to sendmail (use `which sendmail` to confirm path)
         send_email_command = f"echo 'Subject: Test Email   This is a test.' | /usr/sbin/sendmail smtp_test_user@localhost"
         returncode, output, error = self.run_command(send_email_command)
 
@@ -160,10 +175,8 @@ class VMTester(threading.Thread):
         else:
             self.console.write("Test email sent successfully.\n")
         
-        # Check if the test email was received by searching the mail file
         self.console.write("Checking for received email...\n")
         
-        # Assuming Postfix delivers to /var/mail/smtp_test_user, adjust if necessary
         mail_check_command = "sudo grep 'Subject: Test Email' /var/mail/smtp_test_user"
         returncode, output, error = self.run_command(mail_check_command)
         
@@ -190,6 +203,38 @@ class VMTester(threading.Thread):
             self.console.write("Error: Samba share configuration is incorrect\n")
             success = False
 
+        test_file = "/srv/samba/share/test_file.txt"
+        create_file_command = f"echo 'This is a test file' | sudo tee {test_file}"
+        returncode, output, error = self.run_command(create_file_command)
+        if returncode != 0:
+            self.console.write(f"Error: Failed to create test file {test_file}\n")
+            success = False
+        else:
+            self.console.write(f"Successfully created test file {test_file}\n")
+
+        check_file_command = f"sudo test -f {test_file} && echo 'File exists' || echo 'File does not exist'"
+        returncode, output, error = self.run_command(check_file_command)
+        if "File exists" not in output:
+            self.console.write(f"Error: Test file {test_file} does not exist\n")
+            success = False
+        else:
+            self.console.write(f"Test file {test_file} exists\n")
+
+        cat_file_command = f"sudo cat {test_file}"
+        returncode, output, error = self.run_command(cat_file_command)
+        if "This is a test file" not in output:
+            self.console.write(f"Error: Test file {test_file} does not contain expected content\n")
+            success = False
+        else:
+            self.console.write(f"Test file {test_file} contains correct content\n")
+
+        remove_file_command = f"sudo rm {test_file}"
+        returncode, output, error = self.run_command(remove_file_command)
+        if returncode != 0:
+            self.console.write(f"Warning: Failed to remove test file {test_file}\n")
+        else:
+            self.console.write(f"Successfully removed test file {test_file}\n")
+
         return success
 
     def test_vpn(self):
@@ -209,17 +254,28 @@ class VMTester(threading.Thread):
         return success
 
 class Application(tk.Tk):
-    def __init__(self, vms):
+    def __init__(self, vms, use_grid=False):
         super().__init__()
         self.title("VM Unit Test GUI")
         self.vms = vms
+        self.use_grid = use_grid
         self.create_widgets()
 
     def create_widgets(self):
+        self.consoles = {}
+
+        if self.use_grid:
+            self.create_grid_layout()
+        else:
+            self.create_notebook_layout()
+
+        self.start_button = ttk.Button(self, text="Start Tests", command=self.start_tests)
+        self.start_button.pack()
+
+    def create_notebook_layout(self):
         self.notebook = ttk.Notebook(self)
         self.notebook.pack(expand=True, fill='both')
 
-        self.consoles = {}
         for vm in self.vms:
             frame = ttk.Frame(self.notebook)
             self.notebook.add(frame, text=vm)
@@ -227,8 +283,29 @@ class Application(tk.Tk):
             console.pack(expand=True, fill='both')
             self.consoles[vm] = console
 
-        self.start_button = ttk.Button(self, text="Start Tests", command=self.start_tests)
-        self.start_button.pack()
+    def create_grid_layout(self):
+        num_vms = len(self.vms)
+        grid_size = math.ceil(math.sqrt(num_vms))
+
+        main_frame = ttk.Frame(self)
+        main_frame.pack(expand=True, fill='both')
+
+        for i, vm in enumerate(self.vms):
+            row = i // grid_size
+            col = i % grid_size
+            frame = ttk.Frame(main_frame)
+            frame.grid(row=row, column=col, sticky='nsew', padx=5, pady=5)
+            
+            label = ttk.Label(frame, text=vm)
+            label.pack()
+            
+            console = VMConsole(frame, vm, width=40, height=5)  # Size
+            console.pack(expand=True, fill='both')
+            self.consoles[vm] = console
+
+        for i in range(grid_size):
+            main_frame.grid_columnconfigure(i, weight=1)
+            main_frame.grid_rowconfigure(i, weight=1)
 
     def start_tests(self):
         self.start_button.config(state='disabled')
@@ -269,9 +346,10 @@ def main():
         "fire-ext-rennes",
         "dhcp-rennes"
     ], help="List of VMs to test")
+    parser.add_argument("--grid", action="store_true", help="Use grid layout instead of notebook")
     args = parser.parse_args()
 
-    app = Application(args.vms)
+    app = Application(args.vms, use_grid=args.grid)
     app.mainloop()
 
 if __name__ == "__main__":
