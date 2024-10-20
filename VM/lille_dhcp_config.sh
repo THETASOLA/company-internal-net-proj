@@ -24,7 +24,8 @@ subnet 192.168.50.0 netmask 255.255.255.0 {
 
 EOF
 
-sed -i 's/INTERFACESv4=""/INTERFACESv4="eth1 eth2"/' /etc/default/isc-dhcp-server
+#sed -i 's/INTERFACESv4=""/INTERFACESv4="eth1 eth2"/' /etc/default/isc-dhcp-server
+sed -i 's/INTERFACESv4=""/INTERFACESv4="enp0s8 enp0s9"/' /etc/default/isc-dhcp-server
 
 # Restart
 systemctl restart isc-dhcp-server
