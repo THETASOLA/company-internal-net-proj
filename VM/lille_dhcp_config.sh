@@ -28,3 +28,13 @@ sed -i 's/INTERFACESv4=""/INTERFACESv4="enp0s8 enp0s9"/' /etc/default/isc-dhcp-s
 
 # Restart
 systemctl restart isc-dhcp-server
+
+# Configure DNS resolver
+cat << EOF > /etc/systemd/resolved.conf
+[Resolve]
+DNS=192.168.12.2
+Domains=lille.local
+EOF
+
+# Restart systemd-resolved
+systemctl restart systemd-resolved

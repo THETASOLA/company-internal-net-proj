@@ -40,3 +40,13 @@ systemctl restart postfix
 # Ensure mail directory exists for the test user
 mkdir -p /home/smtp_test_user/Maildir
 chown -R smtp_test_user:smtp_test_user /home/smtp_test_user/Maildir
+
+# Configure DNS resolver
+cat << EOF > /etc/systemd/resolved.conf
+[Resolve]
+DNS=192.168.12.2
+Domains=lille.local
+EOF
+
+# Restart systemd-resolved
+systemctl restart systemd-resolved

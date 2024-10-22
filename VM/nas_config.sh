@@ -30,3 +30,13 @@ EOF
 # Restart
 systemctl restart smbd
 systemctl restart nmbd
+
+# Configure DNS resolver
+cat << EOF > /etc/systemd/resolved.conf
+[Resolve]
+DNS=192.168.12.2
+Domains=lille.local
+EOF
+
+# Restart systemd-resolved
+systemctl restart systemd-resolved

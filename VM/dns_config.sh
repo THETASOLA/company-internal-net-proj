@@ -106,3 +106,13 @@ EOF
 
 # Redémarrer le service BIND9
 systemctl restart bind9
+
+# Configure DNS resolver
+cat << EOF > /etc/systemd/resolved.conf
+[Resolve]
+DNS=192.168.12.2
+Domains=lille.local
+EOF
+
+# Restart systemd-resolved
+systemctl restart systemd-resolved
