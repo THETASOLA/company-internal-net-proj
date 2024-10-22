@@ -67,7 +67,7 @@ cat << EOF > /etc/openvpn/client.ovpn
 client
 dev tun
 proto udp
-remote 127.0.0.1 1194 # Connect to the local VPN server
+remote 192.168.10.2 1194 # Connect to the VPN server
 resolv-retry infinite
 nobind
 persist-key
