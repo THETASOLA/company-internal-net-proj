@@ -79,7 +79,6 @@ Vagrant.configure("2") do |config|
     fw_externe_rennes.vm.box = "ubuntu/bionic64"
     fw_externe_rennes.vm.hostname = "fire-ext-rennes"
     fw_externe_rennes.vm.network "public_network"  # WAN interface
-    fw_externe_rennes.vm.network "private_network", ip: "192.168.15.254", netmask: "255.255.255.0"  # LAN_DMZ (Rennes)
     fw_externe_rennes.vm.network "private_network", ip: "192.168.21.254", netmask: "255.255.255.0"  # LAN_DHCP (Rennes)
     fw_externe_rennes.vm.network "private_network", ip: "192.168.51.254", netmask: "255.255.255.0"  # LAN_INT (Rennes)
     fw_externe_rennes.vm.provision "shell", path: "ren_firewall_ext_config.sh", run: "always"
